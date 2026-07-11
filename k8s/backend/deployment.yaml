@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: backend:latest
+          image: docker.io/wanisuyog/task-management-platform:backend-latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5005
