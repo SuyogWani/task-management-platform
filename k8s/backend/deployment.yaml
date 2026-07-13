@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-deployment
+  namespace: task-management-platform
   labels:
     app: backend
 spec:
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: docker.io/wanisuyog/task-management-platform:backend-1.0.0
+          image: docker.io/wanisuyog/task-management-platform:backend-2.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5005
@@ -34,15 +35,15 @@ spec:
                 secretKeyRef:
                   name: backend-secret
                   key: JWT_SECRET
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 5005
-            initialDelaySeconds: 10
-            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
               port: 5005
             initialDelaySeconds: 5
             periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5005
+            initialDelaySeconds: 15
+            periodSeconds: 10
