@@ -27,7 +27,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/task-management-platform:backend-1.0.0
+          tags: ${{ secrets.DOCKER_USERNAME }}/task-management-platform:backend-2.0.0
       
       - name: Buiild and push frontend image
         uses: docker/build-push-action@v5
@@ -35,4 +35,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: ./frontend
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/task-management-platform:frontend-1.0.0
+          tags: ${{ secrets.DOCKER_USERNAME }}/task-management-platform:frontend-2.0.0
