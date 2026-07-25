@@ -1,0 +1,43 @@
+namespace:
+  name: task-management-platform
+
+backend:
+  replicaCount: 1
+  image:
+    repository: docker.io/wanisuyog/task-management-platform
+    tag: backend-2.0.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 5005
+  env:
+    dbHost: postgres
+    dbPort: "5432"
+    dbUser: postgres
+    dbName: task_manager
+  secret:
+    dbPassword: postgres
+    jwtSecret: replace-with-a-secure-secret
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: docker.io/wanisuyog/task-management-platform
+    tag: frontend-2.0.0
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 30080
+
+postgres:
+  image:
+    repository: postgres
+    tag: 15-alpine
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 5Gi
+  auth:
+    username: postgres
+    password: postgres
+    database: task_manager
