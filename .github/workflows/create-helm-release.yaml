@@ -1,0 +1,183 @@
+name: Create Helm Release
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_REGISTRY: docker.io
+  FRONTEND_CHART_PATH: ./frontend/charts
+  BACKEND_CHART_PATH: ./backend/charts
+  DB_CHART_PATH: ./database/charts
+  BACKEND_IMAGE_NAME: backend
+  FRONTEND_IMAGE_NAME: frontend
+
+jobs:
+  get-chart-version:
+    runs-on: ubuntu-latest
+    outputs:
+      backend_chart_version: ${{ steps.get_backend_chart_version.outputs.backend_chart_version }}
+      frontend_chart_version: ${{ steps.get_frontend_chart_version.outputs.frontend_chart_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Get backend chart version
+        id: get_backend_chart_version
+        run: |
+          BACKEND_CHART_VERSION=$(grep '^version:' ${{ env.BACKEND_CHART_PATH }}/Chart.yaml | awk '{print $2}')
+          echo "Backend chart version: $BACKEND_CHART_VERSION"
+          echo "BACKEND_CHART_VERSION=$BACKEND_CHART_VERSION" >> $GITHUB_ENV
+
+      - name: Get frontend chart version
+        id: get_frontend_chart_version
+        run: |
+          FRONTEND_CHART_VERSION=$(grep '^version:' ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml | awk '{print $2}')
+          echo "Frontend chart version: $FRONTEND_CHART_VERSION"
+          echo "FRONTEND_CHART_VERSION=$FRONTEND_CHART_VERSION" >> $GITHUB_ENV
+
+  build-docker:
+    uses: ./.github/workflows/build-docker-images.yaml
+    with:
+      docker_username: ${{ secrets.DOCKER_USERNAME }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+      backend_version: ${{ jobs.get-chart-version.outputs.backend_chart_version }}
+      frontend_version: ${{ jobs.get-chart-version.outputs.frontend_chart_version }}
+
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+
+      - name: Increment backend version
+        id: increment_backend_version
+        run: |
+          IFS='.' read -r -a version_parts <<< "${{ env.BACKEND_VERSION }}"
+          version_parts[2]=$((version_parts[2] + 1))
+          NEW_BACKEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+          echo "New backend version: $NEW_BACKEND_VERSION"
+          echo "NEW_BACKEND_VERSION=$NEW_BACKEND_VERSION" >> $GITHUB_ENV
+      
+      - name: Increment frontend version
+        id: increment_frontend_version
+        run: |
+          IFS='.' read -r -a version_parts <<< "${{ env.FRONTEND_VERSION }}"
+          version_parts[2]=$((version_parts[2] + 1))
+          NEW_FRONTEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+          echo "New frontend version: $NEW_FRONTEND_VERSION"
+          echo "NEW_FRONTEND_VERSION=$NEW_FRONTEND_VERSION" >> $GITHUB_ENV
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Update backend values.yaml with new image tag
+        run: |
+          cd ${{ env.BACKEND_CHART_PATH }}
+          sed -i "s/tag:.*/tag: \backend-${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/values.yaml
+      
+      - name: Update frontend values.yaml with new image tag
+        run: |
+          cd ${{ env.FRONTEND_CHART_PATH }}
+          sed -i "s/tag:.*/tag: \frontend-${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/values.yaml
+      
+      - name: Update Chart.yaml with new backend version
+        run: |
+          cd ${{ env.BACKEND_CHART_PATH }}
+          sed -i "s/version:.*/version: ${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
+          sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
+      
+      - name: Update Chart.yaml with new frontend version
+        run: |
+          cd ${{ env.FRONTEND_CHART_PATH }}
+          sed -i "s/version:.*/version: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
+          sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
+
+      - name: Helm lint backend chart
+        run: |
+          cd ${{ env.BACKEND_CHART_PATH }} 
+          helm lint ${{ env.BACKEND_CHART_PATH }}
+      
+      - name: Helm lint frontend chart
+        run: |
+          cd ${{ env.FRONTEND_CHART_PATH }}
+          helm lint ${{ env.FRONTEND_CHART_PATH }}
+
+      - name: Package backend chart
+        run: |
+          cd ${{ env.BACKEND_CHART_PATH }}
+          helm package ${{ env.BACKEND_CHART_PATH }}
+
+      - name: Package frontend chart
+        run: |
+          cd ${{ env.FRONTEND_CHART_PATH }}
+          helm package ${{ env.FRONTEND_CHART_PATH }}
+
+      - name: List tgz files
+        run: |
+          ls ${{ env.BACKEND_CHART_PATH }} -l *.tgz
+          ls ${{ env.FRONTEND_CHART_PATH }} -l *.tgz
+      
+      - name: Push helm chart
+        run: |
+          cd ${{ env.BACKEND_CHART_PATH }}
+          helm push ${{ env.BACKEND_CHART_PATH }}/*.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
+          cd ${{ env.FRONTEND_CHART_PATH }}
+          helm push ${{ env.FRONTEND_CHART_PATH }}/*.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
+      
+      - name: Tag release in git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag -a "backend-${{ env.NEW_BACKEND_VERSION }}" -m "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
+          git tag -a "frontend-${{ env.NEW_FRONTEND_VERSION }}" -m "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
+          git push origin "backend-${{ env.NEW_BACKEND_VERSION }}"
+          git push origin "frontend-${{ env.NEW_FRONTEND_VERSION }}"
+      
+      - name: Create pull request for backend release
+        id: create_backend_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
+          title: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
+          body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
+          base: main
+          branch: temp-backend-${{ env.NEW_BACKEND_VERSION }}
+          add-path:
+            - ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
+            - ${{ env.BACKEND_CHART_PATH }}/values.yaml
+    
+      - name: Create pull request for frontend release
+        id: create_frontend_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
+          title: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
+          body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
+          base: main
+          branch: temp-frontend-${{ env.NEW_FRONTEND_VERSION }}
+          add-path:
+            - ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
+            - ${{ env.FRONTEND_CHART_PATH }}/values.yaml
+      
+      - name: Automerge backend pull requests
+        if: ${{ steps.create_backend_pr.outputs.pull_request_number }}
+        run: |
+          PR_NUMBER=${{ steps.create_backend_pr.outputs.pull_request_number }}
+          echo "Automerge backend pull request #$PR_NUMBER"
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Automerge frontend pull requests
+        if: ${{ steps.create_frontend_pr.outputs.pull_request_number }}
+        run: |
+          PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull_request_number }}
+          echo "Automerge frontend pull request #$PR_NUMBER"
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
