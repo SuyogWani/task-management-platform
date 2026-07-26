@@ -155,9 +155,9 @@ jobs:
           body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
           base: main
           branch: temp-backend-${{ env.NEW_BACKEND_VERSION }}
-          add-path:
-            - ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
-            - ${{ env.BACKEND_CHART_PATH }}/values.yaml
+          add-path: |
+            ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
+            ${{ env.BACKEND_CHART_PATH }}/values.yaml
     
       - name: Create pull request for frontend release
         id: create_frontend_pr
@@ -169,9 +169,9 @@ jobs:
           body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
           base: main
           branch: temp-frontend-${{ env.NEW_FRONTEND_VERSION }}
-          add-path:
-            - ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
-            - ${{ env.FRONTEND_CHART_PATH }}/values.yaml
+          add-path: |
+            ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
+            ${{ env.FRONTEND_CHART_PATH }}/values.yaml
       
       - name: Automerge backend pull requests
         if: ${{ steps.create_backend_pr.outputs.pull_request_number }}
