@@ -1,0 +1,14 @@
+namespace:
+  name: task-management-platform
+
+postgres:
+  image:
+    repository: postgres
+    tag: 15-alpine
+    pullPolicy: IfNotPresent
+  persistence:
+    enabled: true
+    size: 5Gi
+  auth:
+    username: postgres
+    database: task_manager
