@@ -5,9 +5,11 @@ on:
       backend_version:
         description: 'Backend Docker image version'
         required: true
+        type: string
       frontend_version:
         description: 'Frontend Docker image version'
         required: true
+        type: string
     secrets:
       docker_username:
         description: 'DockerHub username'
@@ -19,6 +21,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
