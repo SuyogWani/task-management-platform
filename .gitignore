@@ -1,3 +1,4 @@
 node_modules/
 .vs/
 .env
+charts/task-management-platform/templates/all-secrets.yaml
