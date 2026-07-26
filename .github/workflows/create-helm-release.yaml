@@ -14,6 +14,7 @@ env:
 
 jobs:
   get-chart-version:
+    name: Get Chart Versions
     runs-on: ubuntu-latest
     outputs:
       backend_chart_version: ${{ steps.get_backend_chart_version.outputs.backend_chart_version }}
@@ -37,15 +38,19 @@ jobs:
           echo "FRONTEND_CHART_VERSION=$FRONTEND_CHART_VERSION" >> $GITHUB_ENV
 
   build-docker:
+    name: Build and Push Docker Images
+    needs: get-chart-version
     uses: ./.github/workflows/build-docker-images.yaml
     with:
+      backend_version: ${{ needs.get-chart-version.outputs.backend_chart_version }}
+      frontend_version: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
+    secrets:
       docker_username: ${{ secrets.DOCKER_USERNAME }}
       docker_password: ${{ secrets.DOCKER_PASSWORD }}
-      backend_version: ${{ jobs.get-chart-version.outputs.backend_chart_version }}
-      frontend_version: ${{ jobs.get-chart-version.outputs.frontend_chart_version }}
 
   create-release:
     runs-on: ubuntu-latest
+    needs: [build-docker, get-chart-version]
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

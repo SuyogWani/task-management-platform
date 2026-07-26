@@ -2,17 +2,18 @@ name: build backend docker image
 on:
   workflow_call:
     inputs:
-      docker_username:
-        description: 'DockerHub username'
-        required: true
-      docker_password:
-        description: 'DockerHub password'
-        required: true
       backend_version:
         description: 'Backend Docker image version'
         required: true
       frontend_version:
         description: 'Frontend Docker image version'
+        required: true
+    secrets:
+      docker_username:
+        description: 'DockerHub username'
+        required: true
+      docker_password:
+        description: 'DockerHub password'
         required: true
 
 jobs:
