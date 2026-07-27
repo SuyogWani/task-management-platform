@@ -17,8 +17,8 @@ jobs:
     name: Get Chart Versions
     runs-on: ubuntu-latest
     outputs:
-      backend_chart_version: ${{ steps.get_backend_chart_version.outputs.BACKEND_CHART_VERSION }}
-      frontend_chart_version: ${{ steps.get_frontend_chart_version.outputs.FRONTEND_CHART_VERSION }}
+      backend_chart_version: ${{ steps.get_backend_chart_version.outputs.backend_chart_version }}
+      frontend_chart_version: ${{ steps.get_frontend_chart_version.outputs.frontend_chart_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -28,14 +28,16 @@ jobs:
         run: |
           BACKEND_CHART_VERSION=$(grep '^version:' ${{ env.BACKEND_CHART_PATH }}/Chart.yaml | awk '{print $2}')
           echo "Backend chart version: $BACKEND_CHART_VERSION"
-          echo "BACKEND_CHART_VERSION=$BACKEND_CHART_VERSION" >> $GITHUB_ENV
+          echo "backend_chart_version=$BACKEND_CHART_VERSION" >> "$GITHUB_OUTPUT"
+          echo "BACKEND_CHART_VERSION=$BACKEND_CHART_VERSION" >> "$GITHUB_ENV"
 
       - name: Get frontend chart version
         id: get_frontend_chart_version
         run: |
           FRONTEND_CHART_VERSION=$(grep '^version:' ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml | awk '{print $2}')
           echo "Frontend chart version: $FRONTEND_CHART_VERSION"
-          echo "FRONTEND_CHART_VERSION=$FRONTEND_CHART_VERSION" >> $GITHUB_ENV
+          echo "frontend_chart_version=$FRONTEND_CHART_VERSION" >> "$GITHUB_OUTPUT"
+          echo "FRONTEND_CHART_VERSION=$FRONTEND_CHART_VERSION" >> "$GITHUB_ENV"
 
   build-docker:
     name: Build and Push Docker Images
@@ -51,6 +53,9 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     needs: [build-docker, get-chart-version]
+    env:
+      BACKEND_CHART_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
+      FRONTEND_CHART_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -61,7 +66,7 @@ jobs:
       - name: Increment backend version
         id: increment_backend_version
         run: |
-          IFS='.' read -r -a version_parts <<< "${{ env.BACKEND_VERSION }}"
+          IFS='.' read -r -a version_parts <<< "${{ env.BACKEND_CHART_VERSION }}"
           version_parts[2]=$((version_parts[2] + 1))
           NEW_BACKEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
           echo "New backend version: $NEW_BACKEND_VERSION"
@@ -70,7 +75,7 @@ jobs:
       - name: Increment frontend version
         id: increment_frontend_version
         run: |
-          IFS='.' read -r -a version_parts <<< "${{ env.FRONTEND_VERSION }}"
+          IFS='.' read -r -a version_parts <<< "${{ env.FRONTEND_CHART_VERSION }}"
           version_parts[2]=$((version_parts[2] + 1))
           NEW_FRONTEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
           echo "New frontend version: $NEW_FRONTEND_VERSION"
