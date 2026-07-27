@@ -84,44 +84,36 @@ jobs:
       
       - name: Update backend values.yaml with new image tag
         run: |
-          cd ${{ env.BACKEND_CHART_PATH }}
           sed -i "s/tag:.*/tag: \backend-${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/values.yaml
       
       - name: Update frontend values.yaml with new image tag
         run: |
-          cd ${{ env.FRONTEND_CHART_PATH }}
           sed -i "s/tag:.*/tag: \frontend-${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/values.yaml
       
       - name: Update Chart.yaml with new backend version
         run: |
-          cd ${{ env.BACKEND_CHART_PATH }}
           sed -i "s/version:.*/version: ${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
           sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
       
       - name: Update Chart.yaml with new frontend version
         run: |
-          cd ${{ env.FRONTEND_CHART_PATH }}
           sed -i "s/version:.*/version: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
           sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
 
       - name: Helm lint backend chart
-        run: |
-          cd ${{ env.BACKEND_CHART_PATH }} 
+        run: | 
           helm lint ${{ env.BACKEND_CHART_PATH }}
       
       - name: Helm lint frontend chart
         run: |
-          cd ${{ env.FRONTEND_CHART_PATH }}
           helm lint ${{ env.FRONTEND_CHART_PATH }}
 
       - name: Package backend chart
         run: |
-          cd ${{ env.BACKEND_CHART_PATH }}
           helm package ${{ env.BACKEND_CHART_PATH }}
 
       - name: Package frontend chart
         run: |
-          cd ${{ env.FRONTEND_CHART_PATH }}
           helm package ${{ env.FRONTEND_CHART_PATH }}
 
       - name: List tgz files
@@ -131,9 +123,7 @@ jobs:
       
       - name: Push helm chart
         run: |
-          cd ${{ env.BACKEND_CHART_PATH }}
           helm push ${{ env.BACKEND_CHART_PATH }}/*.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
-          cd ${{ env.FRONTEND_CHART_PATH }}
           helm push ${{ env.FRONTEND_CHART_PATH }}/*.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
       
       - name: Tag release in git
