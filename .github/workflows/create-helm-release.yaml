@@ -26,9 +26,6 @@ jobs:
       - name: Get backend chart version
         id: get_backend_chart_version
         run: |
-          echo "Present working directory: $(pwd)"
-          echo "list files:"
-          ls -la
           BACKEND_CHART_VERSION=$(grep '^version:' ${{ env.BACKEND_CHART_PATH }}/Chart.yaml | awk '{print $2}')
           echo "Backend chart version: $BACKEND_CHART_VERSION"
           echo "BACKEND_CHART_VERSION=$BACKEND_CHART_VERSION" >> $GITHUB_ENV
