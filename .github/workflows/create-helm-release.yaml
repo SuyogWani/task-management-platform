@@ -17,8 +17,8 @@ jobs:
     name: Get Chart Versions
     runs-on: ubuntu-latest
     outputs:
-      backend_chart_version: ${{ steps.get_backend_chart_version.outputs.backend_chart_version }}
-      frontend_chart_version: ${{ steps.get_frontend_chart_version.outputs.frontend_chart_version }}
+      backend_chart_version: ${{ steps.get_backend_chart_version.outputs.BACKEND_CHART_VERSION }}
+      frontend_chart_version: ${{ steps.get_frontend_chart_version.outputs.FRONTEND_CHART_VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7

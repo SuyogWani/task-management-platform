@@ -1,4 +1,4 @@
-name: build backend docker image
+name: build docker image
 on:
   workflow_call:
     inputs:
@@ -35,7 +35,7 @@ jobs:
           username: ${{ secrets.docker_username }}
           password: ${{ secrets.docker_password }}
 
-      - name: Build and push backendDocker image
+      - name: Build and push backend image
         uses: docker/build-push-action@v5
         with:
           platforms: linux/amd64,linux/arm64
