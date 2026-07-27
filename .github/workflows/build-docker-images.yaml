@@ -32,8 +32,8 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ inputs.docker_username }}
-          password: ${{ inputs.docker_password }}
+          username: ${{ secrets.docker_username }}
+          password: ${{ secrets.docker_password }}
 
       - name: Build and push backendDocker image
         uses: docker/build-push-action@v5
@@ -41,7 +41,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: ./backend
           push: true
-          tags: ${{ inputs.docker_username }}/task-management-platform:backend-${{ inputs.backend_version }}
+          tags: ${{ secrets.docker_username }}/task-management-platform:backend-${{ inputs.backend_version }}
       
       - name: Buiild and push frontend image
         uses: docker/build-push-action@v5
@@ -49,4 +49,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           context: ./frontend
           push: true
-          tags: ${{ inputs.docker_username }}/task-management-platform:frontend-${{ inputs.frontend_version }}
+          tags: ${{ secrets.docker_username }}/task-management-platform:frontend-${{ inputs.frontend_version }}
