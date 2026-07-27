@@ -1,6 +1,10 @@
 namespace:
   name: task-management-platform
 
+backend:
+  service:
+    port: 5005
+
 frontend:
   replicaCount: 1
   image:

@@ -89,11 +89,11 @@ jobs:
       
       - name: Update backend values.yaml with new image tag
         run: |
-          sed -i "s/tag:.*/tag: \backend-${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/values.yaml
+          sed -i "s/tag:.*/tag: backend-${{ env.NEW_BACKEND_VERSION }}/" ${{ env.BACKEND_CHART_PATH }}/values.yaml
       
       - name: Update frontend values.yaml with new image tag
         run: |
-          sed -i "s/tag:.*/tag: \frontend-${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/values.yaml
+          sed -i "s/tag:.*/tag: frontend-${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/values.yaml
       
       - name: Update Chart.yaml with new backend version
         run: |
