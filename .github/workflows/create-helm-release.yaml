@@ -70,8 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-docker, get-chart-version]
     env:
-      NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.NEW_BACKEND_VERSION }}
-      NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.NEW_FRONTEND_VERSION }}
+      NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.backend_version }}
+      NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.frontend_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
