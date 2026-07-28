@@ -44,7 +44,6 @@ jobs:
           version_parts[2]=$((version_parts[2] + 1))
           NEW_BACKEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
           echo "New backend version: $NEW_BACKEND_VERSION"
-          echo "NEW_BACKEND_VERSION=$NEW_BACKEND_VERSION" >> $GITHUB_ENV
           echo "NEW_BACKEND_VERSION=$NEW_BACKEND_VERSION" >> $GITHUB_OUTPUT
       
       - name: Increment frontend version
@@ -54,7 +53,6 @@ jobs:
           version_parts[2]=$((version_parts[2] + 1))
           NEW_FRONTEND_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
           echo "New frontend version: $NEW_FRONTEND_VERSION"
-          echo "NEW_FRONTEND_VERSION=$NEW_FRONTEND_VERSION" >> $GITHUB_ENV
           echo "NEW_FRONTEND_VERSION=$NEW_FRONTEND_VERSION" >> $GITHUB_OUTPUT
 
   build-docker:
@@ -72,8 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-docker, get-chart-version]
     env:
-      BACKEND_CHART_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
-      FRONTEND_CHART_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
+      NEW_BACKEND_VERSION: ${{ needs.increment_backend_version.outputs.NEW_BACKEND_VERSION }}
+      NEW_FRONTEND_VERSION: ${{ needs.increment_frontend_version.outputs.NEW_FRONTEND_VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
