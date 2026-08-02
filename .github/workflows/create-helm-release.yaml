@@ -126,8 +126,8 @@ jobs:
       
       - name: Push helm chart
         run: |
-          helm push backend-chart-${{ env.NEW_BACKEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
-          helm push frontend-chart-${{ env.NEW_FRONTEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}/helm-charts
+          helm push backend-chart-${{ env.NEW_BACKEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}
+          helm push frontend-chart-${{ env.NEW_FRONTEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}
       
       - name: Tag release in git
         run: |
