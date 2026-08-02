@@ -73,6 +73,13 @@ jobs:
       NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
       NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
     steps:
+      - name: Generate Github App token
+        id: generate_github_app_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app_id: ${{ secrets.APP_ID }}
+          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Checkout code
         uses: actions/checkout@v7
 
@@ -131,8 +138,8 @@ jobs:
       
       - name: Tag release in git
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.name "my-github-actions-bot"
+          git config --global user.email "my-github-actions-bot@users.noreply.github.com"
           git tag -a "backend-${{ env.NEW_BACKEND_VERSION }}" -m "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           git tag -a "frontend-${{ env.NEW_FRONTEND_VERSION }}" -m "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           git push origin "backend-${{ env.NEW_BACKEND_VERSION }}"
@@ -142,7 +149,7 @@ jobs:
         id: create_backend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate_github_app_token.outputs.token }}
           commit-message: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           title: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
@@ -156,7 +163,7 @@ jobs:
         id: create_frontend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.generate_github_app_token.outputs.token }}
           commit-message: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           title: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
@@ -171,11 +178,11 @@ jobs:
         run: |
           PR_NUMBER=${{ steps.create_backend_pr.outputs.pull_request_number }}
           echo "Automerge backend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
 
       - name: Automerge frontend pull requests
         if: ${{ steps.create_frontend_pr.outputs.pull_request_number }}
         run: |
           PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull_request_number }}
           echo "Automerge frontend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
