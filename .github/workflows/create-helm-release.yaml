@@ -5,7 +5,7 @@ on:
       - main
 
 env:
-  DOCKER_REGISTRY: docker.io
+  DOCKER_REGISTRY: registry-1.docker.io
   FRONTEND_CHART_PATH: ./frontend/charts
   BACKEND_CHART_PATH: ./backend/charts
   DB_CHART_PATH: ./database/charts
