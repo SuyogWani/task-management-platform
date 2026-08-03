@@ -4,6 +4,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  pull-requests: write
+
 env:
   DOCKER_REGISTRY: registry-1.docker.io
   FRONTEND_CHART_PATH: ./frontend/charts
