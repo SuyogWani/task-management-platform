@@ -77,12 +77,12 @@ jobs:
       NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
       NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
     steps:
-      - name: Generate Github App token
-        id: generate_github_app_token
-        uses: actions/create-github-app-token@v2
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      # - name: Generate Github App token
+      #   id: generate_github_app_token
+      #   uses: actions/create-github-app-token@v2
+      #   with:
+      #     app-id: ${{ secrets.APP_ID }}
+      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Checkout code
         uses: actions/checkout@v7
@@ -144,8 +144,8 @@ jobs:
       
       - name: Tag release in git
         run: |
-          git config --global user.name "my-github-actions-bot"
-          git config --global user.email "my-github-actions-bot@users.noreply.github.com"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
           git tag -a "backend-${{ env.NEW_BACKEND_VERSION }}" -m "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           git tag -a "frontend-${{ env.NEW_FRONTEND_VERSION }}" -m "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           git push origin "backend-${{ env.NEW_BACKEND_VERSION }}"
