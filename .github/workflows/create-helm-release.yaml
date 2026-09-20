@@ -155,7 +155,7 @@ jobs:
         id: create_backend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ steps.generate_github_app_token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           title: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
@@ -169,7 +169,7 @@ jobs:
         id: create_frontend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ steps.generate_github_app_token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           title: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
@@ -184,11 +184,11 @@ jobs:
         run: |
           PR_NUMBER=${{ steps.create_backend_pr.outputs.pull_request_number }}
           echo "Automerge backend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
 
       - name: Automerge frontend pull requests
         if: ${{ steps.create_frontend_pr.outputs.pull_request_number }}
         run: |
           PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull_request_number }}
           echo "Automerge frontend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
