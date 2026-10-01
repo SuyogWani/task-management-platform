@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: task-management-platform-ui
+  description: UI application
+spec:
+  type: website
+  lifecycle: staging
+  owner: suyog_wani
