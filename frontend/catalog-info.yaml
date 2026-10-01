@@ -3,6 +3,8 @@ kind: Component
 metadata:
   name: task-management-platform-ui
   description: UI application
+  annotations:
+    github.com/project-slug: SuyogWani/task-management-platform/frontend
 spec:
   type: website
   lifecycle: staging
