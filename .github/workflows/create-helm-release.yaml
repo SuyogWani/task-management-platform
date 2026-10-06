@@ -161,7 +161,7 @@ jobs:
           body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
           base: main
           branch: temp-backend-${{ env.NEW_BACKEND_VERSION }}
-          add-path: |
+          add-paths: |
             ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
             ${{ env.BACKEND_CHART_PATH }}/values.yaml
     
@@ -175,7 +175,7 @@ jobs:
           body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
           base: main
           branch: temp-frontend-${{ env.NEW_FRONTEND_VERSION }}
-          add-path: |
+          add-paths: |
             ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
             ${{ env.FRONTEND_CHART_PATH }}/values.yaml
       
