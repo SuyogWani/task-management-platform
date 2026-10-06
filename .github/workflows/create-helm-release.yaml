@@ -181,14 +181,18 @@ jobs:
       
       - name: Automerge backend pull requests
         if: ${{ steps.create_backend_pr.outputs.pull-request-number }}
+        env:
+          GH_TOKEN: ${{ steps.generate_github_app_token.outputs.token }}
         run: |
           PR_NUMBER=${{ steps.create_backend_pr.outputs.pull-request-number }}
           echo "Automerge backend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }}
 
       - name: Automerge frontend pull requests
         if: ${{ steps.create_frontend_pr.outputs.pull-request-number }}
+        env:
+          GH_TOKEN: ${{ steps.generate_github_app_token.outputs.token }}
         run: |
           PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull-request-number }}
           echo "Automerge frontend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }}
