@@ -5,6 +5,7 @@ metadata:
   namespace: {{ .Values.namespace.name }}
   labels:
     app: frontend
+    backstage.io/kubernetes-id: frontend
 spec:
   replicas: {{ .Values.frontend.replicaCount }}
   selector:
@@ -14,6 +15,7 @@ spec:
     metadata:
       labels:
         app: frontend
+        backstage.io/kubernetes-id: frontend
     spec:
       containers:
         - name: frontend
