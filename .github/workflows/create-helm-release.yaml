@@ -77,17 +77,17 @@ jobs:
       NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
       NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
     steps:
-      # - name: Generate Github App token
-      #   id: generate_github_app_token
-      #   uses: actions/create-github-app-token@v2
-      #   with:
-      #     app-id: ${{ secrets.APP_ID }}
-      #     private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
+      - name: Generate Github App token
+        id: generate_github_app_token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.CICD_APP_ID }}
+          private-key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
+           
       - name: Checkout code
         uses: actions/checkout@v7
-        # with:
-        #   token: ${{ steps.generate_github_app_token.outputs.token }}
+        with:
+           token: ${{ steps.generate_github_app_token.outputs.token }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v3
@@ -155,7 +155,7 @@ jobs:
         id: create_backend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.generate_github_app_token.outputs.token }}
           commit-message: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           title: "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           body: "This pull request releases backend version ${{ env.NEW_BACKEND_VERSION }}."
@@ -169,7 +169,7 @@ jobs:
         id: create_frontend_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.generate_github_app_token.outputs.token }}
           commit-message: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           title: "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
           body: "This pull request releases frontend version ${{ env.NEW_FRONTEND_VERSION }}."
@@ -184,11 +184,11 @@ jobs:
         run: |
           PR_NUMBER=${{ steps.create_backend_pr.outputs.pull-request-number }}
           echo "Automerge backend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.TOKEN }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
 
       - name: Automerge frontend pull requests
         if: ${{ steps.create_frontend_pr.outputs.pull-request-number }}
         run: |
           PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull-request-number }}
           echo "Automerge frontend pull request #$PR_NUMBER"
-          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.TOKEN }}
+          gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ steps.generate_github_app_token.outputs.token }}
