@@ -180,15 +180,15 @@ jobs:
             ${{ env.FRONTEND_CHART_PATH }}/values.yaml
       
       - name: Automerge backend pull requests
-        if: ${{ steps.create_backend_pr.outputs.pull_request_number }}
+        if: ${{ steps.create_backend_pr.outputs.pull-request-number }}
         run: |
-          PR_NUMBER=${{ steps.create_backend_pr.outputs.pull_request_number }}
+          PR_NUMBER=${{ steps.create_backend_pr.outputs.pull-request-number }}
           echo "Automerge backend pull request #$PR_NUMBER"
           gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.TOKEN }}
 
       - name: Automerge frontend pull requests
-        if: ${{ steps.create_frontend_pr.outputs.pull_request_number }}
+        if: ${{ steps.create_frontend_pr.outputs.pull-request-number }}
         run: |
-          PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull_request_number }}
+          PR_NUMBER=${{ steps.create_frontend_pr.outputs.pull-request-number }}
           echo "Automerge frontend pull request #$PR_NUMBER"
           gh pr merge $PR_NUMBER --auto --squash --repo ${{ github.repository }} --token ${{ secrets.TOKEN }}
