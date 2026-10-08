@@ -1,6 +1,6 @@
 apiVersion: v2
 name: db-chart
 description: Database Helm chart for the task management platform
-version: 2.1.2
-appVersion: 2.1.2
+version: 2.1.3
+appVersion: 2.1.3
 type: application
