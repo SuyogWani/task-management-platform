@@ -1,8 +1,10 @@
 name: Create Helm Release
 on:
-  push:
+  pull_request:
     branches:
       - main
+    types:
+      - closed
 
 permissions:
   contents: write
@@ -20,9 +22,12 @@ jobs:
   get-chart-version:
     name: Get Chart Versions
     runs-on: ubuntu-latest
+    # Only run if PR is merged
+    if: github.event.pull_request.merged == true && !endsWith(github.actor, 'cicd-merge-bot-app[bot]')
     outputs:
       backend_chart_version: ${{ steps.increment_backend_version.outputs.NEW_BACKEND_VERSION }}
       frontend_chart_version: ${{ steps.increment_frontend_version.outputs.NEW_FRONTEND_VERSION }}
+      db_chart_version: ${{ steps.increment_db_version.outputs.NEW_DB_VERSION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -59,8 +64,26 @@ jobs:
           echo "New frontend version: $NEW_FRONTEND_VERSION"
           echo "NEW_FRONTEND_VERSION=$NEW_FRONTEND_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Get db chart version
+        id: get_db_chart_version
+        run: |
+          DB_CHART_VERSION=$(grep '^version:' ${{ env.DB_CHART_PATH }}/Chart.yaml | awk '{print $2}')
+          echo "DB chart version: $DB_CHART_VERSION"
+          echo "db_chart_version=$DB_CHART_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Increment db version
+        id: increment_db_version
+        run: |
+          IFS='.' read -r -a version_parts <<< "${{ steps.get_db_chart_version.outputs.db_chart_version }}"
+          version_parts[2]=$((version_parts[2] + 1))
+          NEW_DB_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
+          echo "New db version: $NEW_DB_VERSION"
+          echo "NEW_DB_VERSION=$NEW_DB_VERSION" >> $GITHUB_OUTPUT
+
   build-docker:
     name: Build and Push Docker Images
+    # Only run if PR is merged
+    if: github.event.pull_request.merged == true && !endsWith(github.actor, 'cicd-merge-bot-app[bot]')
     needs: get-chart-version
     uses: ./.github/workflows/build-docker-images.yaml
     with:
@@ -72,10 +95,13 @@ jobs:
 
   create-release:
     runs-on: ubuntu-latest
+    # Only run if PR is merged
+    if: github.event.pull_request.merged == true && !endsWith(github.actor, 'cicd-merge-bot-app[bot]')
     needs: [build-docker, get-chart-version]
     env:
       NEW_BACKEND_VERSION: ${{ needs.get-chart-version.outputs.backend_chart_version }}
       NEW_FRONTEND_VERSION: ${{ needs.get-chart-version.outputs.frontend_chart_version }}
+      NEW_DB_VERSION: ${{ needs.get-chart-version.outputs.db_chart_version }}
     steps:
       - name: Generate Github App token
         id: generate_github_app_token
@@ -83,7 +109,7 @@ jobs:
         with:
           app-id: ${{ secrets.CICD_APP_ID }}
           private-key: ${{ secrets.CICD_APP_PRIVATE_KEY }}
-           
+
       - name: Checkout code
         uses: actions/checkout@v7
         with:
@@ -116,6 +142,11 @@ jobs:
           sed -i "s/version:.*/version: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
           sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_FRONTEND_VERSION }}/" ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
 
+      - name: Update Chart.yaml with new db version
+        run: |
+          sed -i "s/version:.*/version: ${{ env.NEW_DB_VERSION }}/" ${{ env.DB_CHART_PATH }}/Chart.yaml
+          sed -i "s/appVersion:.*/appVersion: ${{ env.NEW_DB_VERSION }}/" ${{ env.DB_CHART_PATH }}/Chart.yaml
+
       - name: Helm lint backend chart
         run: | 
           helm lint ${{ env.BACKEND_CHART_PATH }}
@@ -123,6 +154,10 @@ jobs:
       - name: Helm lint frontend chart
         run: |
           helm lint ${{ env.FRONTEND_CHART_PATH }}
+
+      - name: Helm lint db chart
+        run: |
+          helm lint ${{ env.DB_CHART_PATH }}
 
       - name: Package backend chart
         run: |
@@ -132,26 +167,34 @@ jobs:
         run: |
           helm package ${{ env.FRONTEND_CHART_PATH }}
 
+      - name: Package db chart
+        run: |
+          helm package ${{ env.DB_CHART_PATH }}
+
       - name: List tgz files
         run: |
           ls ${{ env.BACKEND_CHART_PATH }} -l *.tgz
           ls ${{ env.FRONTEND_CHART_PATH }} -l *.tgz
-      
+          ls ${{ env.DB_CHART_PATH }} -l *.tgz
+
       - name: Push helm chart
         run: |
           helm push backend-chart-${{ env.NEW_BACKEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}
           helm push frontend-chart-${{ env.NEW_FRONTEND_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}
-      
+          helm push db-chart-${{ env.NEW_DB_VERSION }}.tgz oci://$DOCKER_REGISTRY/${{ secrets.DOCKER_USERNAME }}
+
       - name: Tag release in git
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git tag -a "backend-${{ env.NEW_BACKEND_VERSION }}" -m "Release backend version ${{ env.NEW_BACKEND_VERSION }}"
           git tag -a "frontend-${{ env.NEW_FRONTEND_VERSION }}" -m "Release frontend version ${{ env.NEW_FRONTEND_VERSION }}"
+          git tag -a "db-${{ env.NEW_DB_VERSION }}" -m "Release db version ${{ env.NEW_DB_VERSION }}"
           git push origin "backend-${{ env.NEW_BACKEND_VERSION }}"
           git push origin "frontend-${{ env.NEW_FRONTEND_VERSION }}"
-      
-      - name: Create pull request for backend release
+          git push origin "db-${{ env.NEW_DB_VERSION }}"
+
+      - name: Create pull request release
         id: create_pr
         uses: peter-evans/create-pull-request@v7
         with:
@@ -160,12 +203,13 @@ jobs:
           title: "Release  version ${{ env.NEW_BACKEND_VERSION }}"
           body: "This pull request releases version ${{ env.NEW_BACKEND_VERSION }}."
           base: main
-          branch: temp-backend-${{ env.NEW_BACKEND_VERSION }}
+          branch: temp-${{ env.NEW_BACKEND_VERSION }}
           add-paths: |
             ${{ env.BACKEND_CHART_PATH }}/Chart.yaml
             ${{ env.BACKEND_CHART_PATH }}/values.yaml
             ${{ env.FRONTEND_CHART_PATH }}/Chart.yaml
             ${{ env.FRONTEND_CHART_PATH }}/values.yaml
+            ${{ env.DB_CHART_PATH }}/Chart.yaml
       
       - name: Automerge pull request
         if: ${{ steps.create_pr.outputs.pull-request-number }}
