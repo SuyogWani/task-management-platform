@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: task-management-platform-ui
+  description: Backend for task management platform
+  annotations:
+    github.com/project-slug: SuyogWani/task-management-platform/backend
+    backstage.io/kubernetes-id: backend
+spec:
+  type: website
+  lifecycle: staging
+  owner: suyog_wani
